@@ -1,0 +1,184 @@
+function createAgent(ID, x, y) {
+    //create an agent with the given ID.
+    //and place it at the (x, y) grid cell.
+    var agent = document.createElement("div");
+    agent.className = "agent";
+    agent.id = "agent_" + ID;
+    agent.textContent = ID;
+    agent.x = x;
+    agent.y = y;
+    document.getElementById("grid_cell_" + x + "_" + y).appendChild(agent);
+
+    //make the agent a little smaller than the grid cell.
+    agent.style.width = "70%";
+    agent.style.height = "70%";
+
+    //set the left and top margins to center the agent in the grid cell.
+    agent.style.marginLeft = "15%";
+    agent.style.marginTop = "15%";
+
+    //set the text in the center of the agent.
+    agent.style.textAlign = "center";
+    agent.style.verticalAlign = "middle";
+
+    //add shadow to the agent.
+    agent.style.boxShadow = "0px 0px 10px 0px rgba(0,0,0,0.75)";
+}
+
+
+
+function createGrid(grid_size_x, grid_size_y) {
+    //use css grid.
+    //the grid has grid_size_x rows and grid_size_y columns.
+    //each grid cell is 960/grid_size_x pixels wide and 960/grid_size_y pixels high.
+
+    //create grid_size_x * grid_size_y divs and add them to the grid div.
+    
+    var grid_env = document.getElementById("grid_environment");
+    //clear all the grid_cell and agent divs.
+    grid_env.innerHTML = "";
+
+    for (var i = 0; i < grid_size_x; i++) {
+        for (var j = 0; j < grid_size_y; j++) {
+            var grid_cell = document.createElement("div");
+            grid_cell.className = "grid_cell";
+            grid_cell.id = "grid_cell_" + i + "_" + j;
+            //add shadow to the grid cell.
+            grid_cell.style.boxShadow = "0px 0px 10px 0px rgba(0,0,0,0.75)";
+            if (res && res["grid_cell_" + i + "_" + j]) {
+                grid_cell.style.backgroundColor = "#83c1ff";
+            }
+
+            grid_env.appendChild(grid_cell);
+        }
+    }
+
+    //set grid_env x*y grid.
+    grid_env.style.gridTemplateColumns = "repeat(" + grid_size_x + ", 1fr)";
+    grid_env.style.gridTemplateRows = "repeat(" + grid_size_y + ", 1fr)";
+}
+
+var cur_step = 0;
+var res; //json_res
+
+$(document).ready(function () {
+    var cur_step = 0;
+
+    createGrid(25, 25);
+    
+    createAgent(1, 12, 12);
+    
+    document.querySelector("#file-input").addEventListener('change', function() {
+        // files that user has chosen
+        var all_files = this.files;
+        if(all_files.length == 0) {
+            alert('Error : No file selected');
+            return;
+        }
+    
+        // first file selected by user
+        var file = all_files[0];
+    
+        // files types allowed
+        var allowed_types = [ 'text/plain' ];
+        if(allowed_types.indexOf(file.type) == -1) {
+            alert('Error : Incorrect file type');
+            return;
+        }
+    
+        // Max 2 MB allowed
+        var max_size_allowed = 2*1024*1024
+        if(file.size > max_size_allowed) {
+            alert('Error : Exceeded size 2MB');
+            return;
+        }
+    
+        // file validation is successfull
+        // we will now read the file
+    
+        var reader = new FileReader();
+    
+        // file reading started
+        reader.addEventListener('loadstart', function() {
+            document.querySelector("#file-input-label").style.display = 'none'; 
+        });
+    
+        // file reading failed
+        reader.addEventListener('error', function() {
+            alert('Error : Failed to read file');
+        });
+    
+        // file read progress 
+        reader.addEventListener('progress', function(e) {
+            if(e.lengthComputable == true) {
+                document.querySelector("#file-progress-percent").innerHTML = Math.floor((e.loaded/e.total)*100);
+                document.querySelector("#file-progress-percent").style.display = 'block';
+            }
+        });
+    
+        // read as text file
+        reader.readAsText(file);
+
+        // file reading finished successfully
+        reader.addEventListener('load', function(e) {
+            text = e.target.result;
+            res = JSON.parse(text);
+            
+            document.querySelector("#file-input-label").style.display = 'block';
+            createGrid(res.grid_size_x, res.grid_size_y);
+            cur_step = 0;
+            for (var i = 0; i < res.agent_number; i++) {
+                var x = res["agent_" + i][0][0];
+                var y = res["agent_" + i][0][1];
+                createAgent(i, x, y);
+            }
+        });
+    });
+
+    $("#next_step").click(function () {
+        //move the agents to the next step.
+        cur_step = (cur_step + 1) % res.step_number;
+        for (var i = 0; i < res.agent_number; i++) {
+            var x = res["agent_" + i][cur_step][0];
+            var y = res["agent_" + i][cur_step][1];
+            var agent = document.getElementById("agent_" + i);
+            agent.x = x;
+            agent.y = y;
+            document.getElementById("grid_cell_" + x + "_" + y).appendChild(agent);
+        }
+    });
+
+    $("#last_step").click(function () {
+        //move the agents to the previous step.
+        cur_step = (cur_step - 1 + res.step_number) % res.step_number;
+        for (var i = 0; i < res.agent_number; i++) {
+            var x = res["agent_" + i][cur_step][0];
+            var y = res["agent_" + i][cur_step][1];
+            var agent = document.getElementById("agent_" + i);
+            agent.x = x;
+            agent.y = y;
+            document.getElementById("grid_cell_" + x + "_" + y).appendChild(agent);
+        }
+    });
+
+    $("#start").click(function () {
+        //start the animation.
+        interval = setInterval(function () {
+            cur_step = (cur_step + 1) % res.step_number;
+            for (var i = 0; i < res.agent_number; i++) {
+                var x = res["agent_" + i][cur_step][0];
+                var y = res["agent_" + i][cur_step][1];
+                var agent = document.getElementById("agent_" + i);
+                agent.x = x;
+                agent.y = y;
+                document.getElementById("grid_cell_" + x + "_" + y).appendChild(agent);
+            }
+        }, 800);
+    });
+
+    $("#stop").click(function () {
+        //stop the animation.
+        clearInterval(interval);
+    });
+
+});
