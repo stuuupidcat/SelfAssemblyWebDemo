@@ -58,15 +58,44 @@ function createGrid(grid_size_x, grid_size_y) {
     grid_env.style.gridTemplateRows = "repeat(" + grid_size_y + ", 1fr)";
 }
 
+function turnShapeColor(res) {
+        var color;
+        if (res['max_occupancy'] < 0.99999) {
+            color = "#ff0000";
+        }
+        else {
+            color = "#00ff00";
+        }
+
+        for (var i = 0; i < res.grid_size_x; i++) {
+            for (var j = 0; j < res.grid_size_y; j++) {
+                if (res["grid_cell_" + i + "_" + j]) {
+                    var grid_cell = document.getElementById("grid_cell_" + i + "_" + j);
+                    grid_cell.style.backgroundColor = color;
+                }
+            }
+        }
+        setTimeout(function () {
+            for (var i = 0; i < res.grid_size_x; i++) {
+                for (var j = 0; j < res.grid_size_y; j++) {
+                    if (res["grid_cell_" + i + "_" + j]) {
+                        var grid_cell = document.getElementById("grid_cell_" + i + "_" + j);
+                        grid_cell.style.backgroundColor = "#83c1ff";
+                    }
+                }
+            }
+        }, 1000);
+}
+
 var cur_step = 0;
 var res; //json_res
 
 $(document).ready(function () {
     var cur_step = 0;
 
-    createGrid(25, 25);
+    createGrid(32, 32);
     
-    createAgent(1, 12, 12);
+    createAgent(1, 16, 16);
     
     document.querySelector("#file-input").addEventListener('change', function() {
         // files that user has chosen
@@ -136,8 +165,10 @@ $(document).ready(function () {
     });
 
     $("#next_step").click(function () {
-        //move the agents to the next step.
-        cur_step = (cur_step + 1) % res.step_number;
+        cur_step = cur_step + 1;
+        if (cur_step >= res.step_number) {
+            cur_step = res.step_number;
+        }
         for (var i = 0; i < res.agent_number; i++) {
             var x = res["agent_" + i][cur_step][0];
             var y = res["agent_" + i][cur_step][1];
@@ -146,11 +177,17 @@ $(document).ready(function () {
             agent.y = y;
             document.getElementById("grid_cell_" + x + "_" + y).appendChild(agent);
         }
+        if (cur_step == res.step_number - 1) {
+            turnShapeColor(res);
+        }
     });
 
     $("#last_step").click(function () {
         //move the agents to the previous step.
-        cur_step = (cur_step - 1 + res.step_number) % res.step_number;
+        cur_step = cur_step - 1;
+        if (cur_step < 0) {
+            cur_step = 0;
+        }
         for (var i = 0; i < res.agent_number; i++) {
             var x = res["agent_" + i][cur_step][0];
             var y = res["agent_" + i][cur_step][1];
@@ -164,7 +201,10 @@ $(document).ready(function () {
     $("#start").click(function () {
         //start the animation.
         interval = setInterval(function () {
-            cur_step = (cur_step + 1) % res.step_number;
+            cur_step = cur_step + 1;
+            if (cur_step >= res.step_number) {
+                cur_step = res.step_number;
+            }
             for (var i = 0; i < res.agent_number; i++) {
                 var x = res["agent_" + i][cur_step][0];
                 var y = res["agent_" + i][cur_step][1];
@@ -173,7 +213,11 @@ $(document).ready(function () {
                 agent.y = y;
                 document.getElementById("grid_cell_" + x + "_" + y).appendChild(agent);
             }
-        }, 800);
+            if (cur_step == res.step_number - 1) {
+                turnShapeColor(res);
+                clearInterval(interval);
+            }
+        }, 300);
     });
 
     $("#stop").click(function () {
