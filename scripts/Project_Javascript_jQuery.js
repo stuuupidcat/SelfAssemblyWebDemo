@@ -21,6 +21,16 @@ function createAgent(ID, x, y) {
     agent.style.textAlign = "center";
     agent.style.verticalAlign = "middle";
 
+    if (res && res.grid_size_x < 40) {
+        agent.style.fontSize = "15px";
+    }
+    else if (res && res.grid_size_x < 80) {
+        agent.style.fontSize = "8px";
+    }
+    else {
+        agent.style.fontSize = "0px";
+    }
+
     //add shadow to the agent.
     agent.style.boxShadow = "0px 0px 10px 0px rgba(0,0,0,0.75)";
 }
@@ -44,7 +54,7 @@ function createGrid(grid_size_x, grid_size_y) {
             grid_cell.className = "grid_cell";
             grid_cell.id = "grid_cell_" + i + "_" + j;
             //add shadow to the grid cell.
-            grid_cell.style.boxShadow = "0px 0px 10px 0px rgba(0,0,0,0.75)";
+            //grid_cell.style.boxShadow = "0px 0px 10px 0px rgba(0,0,0,0.75)";
             if (res && res["grid_cell_" + i + "_" + j]) {
                 grid_cell.style.backgroundColor = "#83c1ff";
             }
@@ -53,9 +63,21 @@ function createGrid(grid_size_x, grid_size_y) {
         }
     }
 
-    //set grid_env x*y grid.
-    grid_env.style.gridTemplateColumns = "repeat(" + grid_size_x + ", 1fr)";
-    grid_env.style.gridTemplateRows = "repeat(" + grid_size_y + ", 1fr)";
+    //set grid_env x*y grid, use repeat() function.
+    grid_env.style.gridTemplateColumns = "repeat(" + grid_size_y + ", 1fr)";
+    grid_env.style.gridTemplateRows = "repeat(" + grid_size_x + ", 1fr)";
+
+    //set the width and height of the grid environment.
+    grid_env.style.width = "1200px";
+    grid_env.style.height = "1200px";
+
+    //set the width and height of the grid cells.
+    var grid_cells = document.getElementsByClassName("grid_cell");
+    for (var i = 0; i < grid_cells.length; i++) {
+        grid_cells[i].style.width = (1200 / grid_size_y) + "px";
+        grid_cells[i].style.height = (1200 / grid_size_x) + "px";
+    }
+
 }
 
 function turnShapeColor(res) {
@@ -115,12 +137,7 @@ $(document).ready(function () {
             return;
         }
     
-        // Max 2 MB allowed
-        var max_size_allowed = 2*1024*1024
-        if(file.size > max_size_allowed) {
-            alert('Error : Exceeded size 2MB');
-            return;
-        }
+    
     
         // file validation is successfull
         // we will now read the file
@@ -167,7 +184,7 @@ $(document).ready(function () {
     $("#next_step").click(function () {
         cur_step = cur_step + 1;
         if (cur_step >= res.step_number) {
-            cur_step = res.step_number;
+            cur_step = res.step_number-1;
         }
         for (var i = 0; i < res.agent_number; i++) {
             var x = res["agent_" + i][cur_step][0];
@@ -177,7 +194,7 @@ $(document).ready(function () {
             agent.y = y;
             document.getElementById("grid_cell_" + x + "_" + y).appendChild(agent);
         }
-        if (cur_step == res.step_number - 1) {
+        if (cur_step == res.step_number-1) {
             turnShapeColor(res);
         }
     });
@@ -203,7 +220,7 @@ $(document).ready(function () {
         interval = setInterval(function () {
             cur_step = cur_step + 1;
             if (cur_step >= res.step_number) {
-                cur_step = res.step_number;
+                cur_step = res.step_number-1;
             }
             for (var i = 0; i < res.agent_number; i++) {
                 var x = res["agent_" + i][cur_step][0];
@@ -213,7 +230,7 @@ $(document).ready(function () {
                 agent.y = y;
                 document.getElementById("grid_cell_" + x + "_" + y).appendChild(agent);
             }
-            if (cur_step == res.step_number - 1) {
+            if (cur_step == res.step_number-1) {
                 turnShapeColor(res);
                 clearInterval(interval);
             }
